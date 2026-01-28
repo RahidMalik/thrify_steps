@@ -31,12 +31,12 @@ const Hero = () => {
             Comfort meets confidence on every step.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 animate-fade-up opacity-0 stagger-4">
-            <Link to="/sneakers">
+            <Link to="/products/sneakers">
               <Button variant="hero" size="xl">
                 Shop Sneakers
               </Button>
             </Link>
-            <Link to="/joggers">
+            <Link to="/products/joggers">
               <Button variant="heroOutline" size="xl">
                 Shop Joggers
               </Button>

@@ -8,19 +8,41 @@ import Footer from "@/components/layout/Footer";
 import { useAuth } from "@/contexts/AuthContext";
 import { PublicRoute } from "@/components/ProtectedRoute";
 import { toast } from "sonner";
+import { Eye, EyeOff, Mail, Lock } from "lucide-react"; // Icons for professional look
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false); // Eye toggle state
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
+  // Email Validation Logic
+  const validateEmail = (email: string) => {
+    return String(email)
+      .toLowerCase()
+      .match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    // 1. Basic Empty Validation
     if (!email || !password) {
       toast.error("Please fill in all fields");
+      return;
+    }
+
+    // 2. Email Format Validation
+    if (!validateEmail(email)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
+    // 3. Password Length Validation
+    if (password.length < 6) {
+      toast.error("Password must be at least 6 characters");
       return;
     }
 
@@ -28,12 +50,11 @@ const Login = () => {
 
     try {
       await login(email, password);
-      // Navigate only on success (AuthContext handles errors)
+      toast.success("Welcome back to Thrifty Steps!");
       navigate("/", { replace: true });
     } catch (error: any) {
-      // Error is already handled in AuthContext with toast
-      // Additional handling can be added here if needed
       console.error("Login error:", error);
+      // Note: AuthContext should already show error toast
     } finally {
       setLoading(false);
     }
@@ -41,67 +62,92 @@ const Login = () => {
 
   return (
     <PublicRoute>
-      <div className="min-h-screen">
+      <div className="min-h-screen flex flex-col">
         <Navbar />
-        <main className="pt-20 pb-20">
-        <section className="section-padding bg-background">
-          <div className="container-custom max-w-md mx-auto">
-            <div className="bg-card p-8 rounded-2xl shadow-lg">
+        <main className="flex-grow pt-28 pb-20 bg-slate-50">
+          <section className="container-custom max-w-md mx-auto px-4">
+            <div className="bg-white p-8 rounded-3xl shadow-xl border border-slate-100">
               <div className="text-center mb-8">
-                <h1 className="text-3xl font-bold mb-2">Welcome Back</h1>
-                <p className="text-muted-foreground">
+                <h1 className="text-3xl font-black mb-2 tracking-tight">Welcome Back</h1>
+                <p className="text-muted-foreground text-sm font-medium">
                   Sign in to your Thrifty Steps account
                 </p>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-5">
+                {/* Email Field */}
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="your@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
+                  <Label htmlFor="email" className="text-xs font-bold uppercase tracking-wider text-slate-500">Email Address</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="malik@example.com"
+                      className="pl-10 h-12 rounded-xl border-slate-200 focus:ring-primary"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                  </div>
                 </div>
 
+                {/* Password Field with Eye Icon */}
                 <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
+                  <div className="flex justify-between items-center">
+                    <Label htmlFor="password" className="text-xs font-bold uppercase tracking-wider text-slate-500">Password</Label>
+                    <Link
+                      to="/forgot-password"
+                      className="text-xs font-bold text-primary hover:underline"
+                    >
+                      Forgot Password?
+                    </Link>
+                  </div>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      className="pl-10 pr-10 h-12 rounded-xl border-slate-200 focus:ring-primary"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
 
                 <Button
                   type="submit"
-                  className="w-full"
-                  size="lg"
+                  className="w-full h-12 rounded-xl font-bold text-base shadow-lg shadow-primary/20 active:scale-[0.98] transition-all"
                   disabled={loading}
                 >
-                  {loading ? "Signing in..." : "Sign In"}
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Signing In...
+                    </span>
+                  ) : "Sign In"}
                 </Button>
               </form>
 
-              <div className="mt-6 text-center text-sm">
-                <span className="text-muted-foreground">
+              <div className="mt-8 text-center text-sm font-medium">
+                <span className="text-slate-500">
                   Don't have an account?{" "}
                 </span>
-                <Link to="/register" className="text-primary hover:underline font-medium">
-                  Sign up
+                <Link to="/register" className="text-primary hover:underline font-bold">
+                  Create Account
                 </Link>
               </div>
             </div>
-          </div>
-        </section>
-      </main>
-      <Footer />
+          </section>
+        </main>
+        <Footer />
       </div>
     </PublicRoute>
   );

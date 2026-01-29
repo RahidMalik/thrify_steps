@@ -13,12 +13,18 @@ const {
   addToCart,
   updateCartItem,
   removeFromCart,
-  getCart
+  getCart,
+  forgotPassword,
+  resetPassword
 } = require('../controllers/auth.controller');
 
 // Public routes
 router.post('/register', register);
 router.post('/login', login);
+
+// Password reset routes
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password/:token', resetPassword);
 
 // Protected routes
 router.get('/me', protect, getMe);

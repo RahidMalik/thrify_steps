@@ -41,8 +41,8 @@ const Login = () => {
     }
 
     // 3. Password Length Validation
-    if (password.length < 6) {
-      toast.error("Password must be at least 6 characters");
+    if (password.length < 8) {
+      toast.error("Password must be at least 8 characters");
       return;
     }
 
@@ -52,9 +52,10 @@ const Login = () => {
       await login(email, password);
       toast.success("Welcome back to Thrifty Steps!");
       navigate("/", { replace: true });
-    } catch (error: any) {
-      console.error("Login error:", error);
-      // Note: AuthContext should already show error toast
+    } catch (error) {
+      const err = error as Error;
+      console.error("Login error:", err);
+      toast.error(err.message || "Login failed");
     } finally {
       setLoading(false);
     }

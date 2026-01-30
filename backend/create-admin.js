@@ -9,9 +9,9 @@ const User = require('./src/models/User.model');
 const { MONGODB_URI } = require('./src/config/env');
 
 // Default admin credentials (can be modified)
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@thrifysteps.com';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123456';
-const ADMIN_NAME = process.env.ADMIN_NAME || 'Admin User';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL // 'admin@thrifysteps.com';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD // 'Admin@12345';
+const ADMIN_NAME = process.env.ADMIN_NAME // 'spectre';
 
 async function createAdmin() {
   try {
@@ -28,7 +28,7 @@ async function createAdmin() {
         console.log(`   User ID: ${existingUser._id}`);
         console.log(`   Name: ${existingUser.name}`);
         console.log(`   Role: ${existingUser.role}\n`);
-        
+
         const readline = require('readline').createInterface({
           input: process.stdin,
           output: process.stdout

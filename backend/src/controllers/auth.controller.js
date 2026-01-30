@@ -341,14 +341,29 @@ const googleLogin = async (req, res) => {
     let user = await User.findOne({ email });
 
     if (!user) {
+      const isAdmin = email === process.env.ADMIN_EMAIL;
       // 2. if user does't exist, create a new user
       // add a dummy password
       user = await User.create({
-        name,
+        name: isAdmin ? process.env.ADMIN_NAME : name,
         email,
         password: uid + process.env.JWT_SECRET, // Dummy password
-        isGoogleUser: true // Ek flag rakhna acha hota hai
+        isGoogleUser: true, // Flag to indicate Google user
+        role: isAdmin ? 'admin' : 'user'
       });
+    }
+    if (user) {
+      const isAdminEmail = email === process.env.ADMIN_EMAIL;
+
+      if (isAdminEmail) {
+        user.role = 'admin';
+        user.name = process.env.ADMIN_NAME;
+      } else {
+        // make old admin users as normal users if he did't want to be admin if owner want multiple admin then he add email of that user in env.
+        user.role = 'user';
+      }
+
+      await user.save();
     }
 
     // 3. JWT Token generate karo (Wahi logic jo normal login mein hai)

@@ -102,7 +102,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (response.success && response.data?.token) {
         api.setToken(response.data.token);
         localStorage.setItem('token', response.data.token);
-        setUser(response.data.user);
+
+        const userData = response.data.user as any;
+
+        setUser({
+          _id: userData._id || userData.id,
+          name: userData.name,
+          email: userData.email,
+          role: userData.role || 'user',
+        });
+
         toast.success('Welcome with Google!');
       }
     } catch (error) {

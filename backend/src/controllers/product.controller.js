@@ -156,15 +156,22 @@ const createProduct = asyncHandler(async (req, res) => {
  */
 const updateProduct = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  if (!isValidObjectId(id)) return sendError(res, 400, 'Invalid product ID');
+  const updateProduct = await Product.findById(id);
+  if (!updateProduct) return sendError(res, 404, 'Product not found');
 
   const updateData = { ...req.body };
 
-  // Agar nayi images upload hui hain
   if (req.files && req.files.length > 0) {
+    // --- PURANI IMAGES DELETE KARO ---
+    if (updateProduct.images && updateProduct.images.length > 0) {
+      for (const imgUrl of updateProduct.images) {
+        const publicId = imgUrl.split('/').pop().split('.')[0];
+        await cloudinary.uploader.destroy(`thrifty_steps/${publicId}`);
+      }
+    }
+    // Nayi images ka path set karo
     updateData.images = req.files.map(file => file.path);
   }
-
   if (updateData.sizes && typeof updateData.sizes === 'string') {
     updateData.sizes = updateData.sizes.split(',').map(s => s.trim());
   }
@@ -192,12 +199,20 @@ const updateProduct = asyncHandler(async (req, res) => {
  */
 const deleteProduct = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  if (!isValidObjectId(id)) return sendError(res, 400, 'Invalid product ID');
-
-  const product = await Product.findByIdAndUpdate(id, { isActive: false }, { new: true });
+  const product = await Product.findById(id);
   if (!product) return sendError(res, 404, 'Product not found');
 
-  sendSuccess(res, 200, 'Product deleted successfully');
+  // Cloudinary se images urrao
+  if (product.images && product.images.length > 0) {
+    for (const imgUrl of product.images) {
+      // URL se ID nikalne ka tareeqa
+      const publicId = imgUrl.split('/').pop().split('.')[0];
+      await cloudinary.uploader.destroy(`thrifty_steps/${publicId}`);
+    }
+  }
+
+  await product.deleteOne(); // Database se khatam
+  sendSuccess(res, 200, 'Product and Images deleted successfully');
 });
 
 const getBrands = asyncHandler(async (req, res) => {

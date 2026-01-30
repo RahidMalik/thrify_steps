@@ -14,7 +14,7 @@ const {
   deleteProduct,
   getBrands
 } = require('../controllers/product.controller');
-const upload = require('../config/cloudinary');
+const upload = require('../config/cloudinaryConfig');
 
 // Public routes
 router.get('/', getProducts);

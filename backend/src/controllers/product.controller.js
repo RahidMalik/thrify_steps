@@ -1,17 +1,16 @@
 /**
  * Product Controller
- * Handles product CRUD operations and filtering
+ * Handles product CRUD operations and filtering with Cloudinary integration
  */
 
 const Product = require('../models/Product.model');
 const { sendSuccess, sendError } = require('../utils/response');
 const { asyncHandler } = require('../middlewares/error.middleware');
 const { isValidObjectId } = require('../utils/validators');
+const cloudinary = require('cloudinary').v2; // Added Cloudinary
 
 /**
  * @route   GET /api/products
- * @desc    Get all products with filtering, sorting, and pagination
- * @access  Public
  */
 const getProducts = asyncHandler(async (req, res) => {
   const {
@@ -29,7 +28,6 @@ const getProducts = asyncHandler(async (req, res) => {
     featured
   } = req.query;
 
-  // Build query
   const query = { isActive: true };
 
   if (category) {
@@ -48,9 +46,7 @@ const getProducts = asyncHandler(async (req, res) => {
     }
   }
 
-  if (brand) {
-    query.brand = new RegExp(brand, 'i');
-  }
+  if (brand) query.brand = new RegExp(brand, 'i');
 
   if (minPrice || maxPrice) {
     query.price = {};
@@ -58,27 +54,14 @@ const getProducts = asyncHandler(async (req, res) => {
     if (maxPrice) query.price.$lte = parseFloat(maxPrice);
   }
 
-  if (size) {
-    query.sizes = size;
-  }
+  if (size) query.sizes = size;
+  if (color) query.colors = new RegExp(color, 'i');
+  if (featured === 'true') query.isFeatured = true;
+  if (search) query.$text = { $search: search };
 
-  if (color) {
-    query.colors = new RegExp(color, 'i');
-  }
-
-  if (featured === 'true') {
-    query.isFeatured = true;
-  }
-
-  if (search) {
-    query.$text = { $search: search };
-  }
-
-  // Sorting
   const sort = {};
   sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
 
-  // Execute query with pagination
   const skip = (parseInt(page) - 1) * parseInt(limit);
 
   const products = await Product.find(query)
@@ -102,39 +85,26 @@ const getProducts = asyncHandler(async (req, res) => {
 
 /**
  * @route   GET /api/products/:id
- * @desc    Get single product by ID
- * @access  Public
  */
 const getProduct = asyncHandler(async (req, res) => {
   const { id } = req.params;
-
-  if (!isValidObjectId(id)) {
-    return sendError(res, 400, 'Invalid product ID');
-  }
+  if (!isValidObjectId(id)) return sendError(res, 400, 'Invalid product ID');
 
   const product = await Product.findById(id)
     .populate('category', 'name slug')
     .populate({
       path: 'reviews',
-      populate: {
-        path: 'user',
-        select: 'name'
-      }
+      populate: { path: 'user', select: 'name' }
     });
 
-  if (!product || !product.isActive) {
-    return sendError(res, 404, 'Product not found');
-  }
+  if (!product || !product.isActive) return sendError(res, 404, 'Product not found');
 
-  sendSuccess(res, 200, 'Product retrieved successfully', {
-    product
-  });
+  sendSuccess(res, 200, 'Product retrieved successfully', { product });
 });
 
 /**
  * @route   POST /api/products
- * @desc    Create new product
- * @access  Private/Admin
+ * @desc    Create new product using Cloudinary for images
  */
 const createProduct = asyncHandler(async (req, res) => {
   const {
@@ -146,51 +116,22 @@ const createProduct = asyncHandler(async (req, res) => {
     colors,
     stock,
     category,
-    images,
     description,
     isFeatured
   } = req.body;
 
-  // Validate required fields
-  if (!title || !price || !sizes || !colors || !category || !images || !description) {
-    return sendError(res, 400, 'Please provide all required fields');
+  // images ab req.files se aayengi (Multer middleware ki wajah se)
+  const imageFiles = req.files;
+
+  if (!title || !price || !sizes || !colors || !category || !description || !imageFiles || imageFiles.length === 0) {
+    return sendError(res, 400, 'Please provide all required fields and at least one image');
   }
 
-  // Ensure sizes and colors are arrays
-  const sizesArray = Array.isArray(sizes) ? sizes : (typeof sizes === 'string' ? sizes.split(',').map(s => s.trim()) : []);
-  const colorsArray = Array.isArray(colors) ? colors : (typeof colors === 'string' ? colors.split(',').map(c => c.trim()) : []);
+  // Cloudinary URLs extract karna
+  const imagesArray = imageFiles.map(file => file.path);
 
-  // Handle images - must be base64 data URIs
-  let imagesArray = [];
-  if (Array.isArray(images)) {
-    imagesArray = images.filter(img =>
-      typeof img === 'string' && img.startsWith('data:image/') && img.includes(';base64,')
-    );
-  } else if (typeof images === 'string') {
-    // If it's a single base64 string, wrap in array
-    if (images.startsWith('data:image/') && images.includes(';base64,')) {
-      imagesArray = [images];
-    } else {
-      // Try splitting by comma for multiple images
-      imagesArray = images.split(',').map(i => i.trim()).filter(i =>
-        i.startsWith('data:image/') && i.includes(';base64,')
-      );
-    }
-  }
-
-  if (imagesArray.length === 0) {
-    return sendError(res, 400, 'At least one valid base64 image is required. Format: data:image/type;base64,...');
-  }
-
-  // Validate base64 image size (limit to ~5MB per image)
-  for (const img of imagesArray) {
-    const base64Data = img.split(',')[1] || '';
-    const sizeInBytes = (base64Data.length * 3) / 4;
-    const sizeInMB = sizeInBytes / (1024 * 1024);
-    if (sizeInMB > 5) {
-      return sendError(res, 400, `Image size exceeds 5MB limit. Current size: ${sizeInMB.toFixed(2)}MB`);
-    }
-  }
+  const sizesArray = Array.isArray(sizes) ? sizes : sizes.split(',').map(s => s.trim());
+  const colorsArray = Array.isArray(colors) ? colors : colors.split(',').map(c => c.trim());
 
   const product = await Product.create({
     title,
@@ -201,75 +142,37 @@ const createProduct = asyncHandler(async (req, res) => {
     colors: colorsArray,
     stock: parseInt(stock) || 0,
     category,
-    images: imagesArray,
+    images: imagesArray, // Cloudinary URLs saved here
     description,
     isFeatured: isFeatured === 'true' || isFeatured === true
   });
 
   await product.populate('category', 'name slug');
-
-  sendSuccess(res, 201, 'Product created successfully', {
-    product
-  });
+  sendSuccess(res, 201, 'Product created successfully', { product });
 });
 
 /**
  * @route   PUT /api/products/:id
- * @desc    Update product
- * @access  Private/Admin
  */
 const updateProduct = asyncHandler(async (req, res) => {
   const { id } = req.params;
-
-  if (!isValidObjectId(id)) {
-    return sendError(res, 400, 'Invalid product ID');
-  }
+  if (!isValidObjectId(id)) return sendError(res, 400, 'Invalid product ID');
 
   const updateData = { ...req.body };
 
-  // Handle array fields
+  // Agar nayi images upload hui hain
+  if (req.files && req.files.length > 0) {
+    updateData.images = req.files.map(file => file.path);
+  }
+
   if (updateData.sizes && typeof updateData.sizes === 'string') {
     updateData.sizes = updateData.sizes.split(',').map(s => s.trim());
   }
   if (updateData.colors && typeof updateData.colors === 'string') {
     updateData.colors = updateData.colors.split(',').map(c => c.trim());
   }
-  // Validate and process images if provided
-  if (updateData.images) {
-    let imagesArray = [];
-    if (Array.isArray(updateData.images)) {
-      imagesArray = updateData.images.filter(img =>
-        typeof img === 'string' && img.startsWith('data:image/') && img.includes(';base64,')
-      );
-    } else if (typeof updateData.images === 'string') {
-      if (updateData.images.startsWith('data:image/') && updateData.images.includes(';base64,')) {
-        imagesArray = [updateData.images];
-      } else {
-        imagesArray = updateData.images.split(',').map(i => i.trim()).filter(i =>
-          i.startsWith('data:image/') && i.includes(';base64,')
-        );
-      }
-    }
 
-    if (imagesArray.length > 0) {
-      // Validate image sizes
-      for (const img of imagesArray) {
-        const base64Data = img.split(',')[1] || '';
-        const sizeInBytes = (base64Data.length * 3) / 4;
-        const sizeInMB = sizeInBytes / (1024 * 1024);
-        if (sizeInMB > 5) {
-          return sendError(res, 400, `Image size exceeds 5MB limit. Current size: ${sizeInMB.toFixed(2)}MB`);
-        }
-      }
-      updateData.images = imagesArray;
-    } else if (updateData.images !== undefined) {
-      return sendError(res, 400, 'Invalid image format. Images must be base64 data URIs (data:image/type;base64,...)');
-    }
-  }
-
-  // Convert numeric fields
   if (updateData.price) updateData.price = parseFloat(updateData.price);
-  if (updateData.discountPrice) updateData.discountPrice = parseFloat(updateData.discountPrice);
   if (updateData.stock) updateData.stock = parseInt(updateData.stock);
   if (updateData.isFeatured !== undefined) {
     updateData.isFeatured = updateData.isFeatured === 'true' || updateData.isFeatured === true;
@@ -280,51 +183,26 @@ const updateProduct = asyncHandler(async (req, res) => {
     runValidators: true
   }).populate('category', 'name slug');
 
-  if (!product) {
-    return sendError(res, 404, 'Product not found');
-  }
-
-  sendSuccess(res, 200, 'Product updated successfully', {
-    product
-  });
+  if (!product) return sendError(res, 404, 'Product not found');
+  sendSuccess(res, 200, 'Product updated successfully', { product });
 });
 
 /**
  * @route   DELETE /api/products/:id
- * @desc    Delete product (soft delete)
- * @access  Private/Admin
  */
 const deleteProduct = asyncHandler(async (req, res) => {
   const { id } = req.params;
+  if (!isValidObjectId(id)) return sendError(res, 400, 'Invalid product ID');
 
-  if (!isValidObjectId(id)) {
-    return sendError(res, 400, 'Invalid product ID');
-  }
-
-  const product = await Product.findByIdAndUpdate(
-    id,
-    { isActive: false },
-    { new: true }
-  );
-
-  if (!product) {
-    return sendError(res, 404, 'Product not found');
-  }
+  const product = await Product.findByIdAndUpdate(id, { isActive: false }, { new: true });
+  if (!product) return sendError(res, 404, 'Product not found');
 
   sendSuccess(res, 200, 'Product deleted successfully');
 });
 
-/**
- * @route   GET /api/products/brands
- * @desc    Get all unique brands
- * @access  Public
- */
 const getBrands = asyncHandler(async (req, res) => {
   const brands = await Product.distinct('brand', { isActive: true });
-
-  sendSuccess(res, 200, 'Brands retrieved successfully', {
-    brands: brands.sort()
-  });
+  sendSuccess(res, 200, 'Brands retrieved successfully', { brands: brands.sort() });
 });
 
 module.exports = {

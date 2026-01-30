@@ -8,14 +8,15 @@ import Footer from "@/components/layout/Footer";
 import { useAuth } from "@/contexts/AuthContext";
 import { PublicRoute } from "@/components/ProtectedRoute";
 import { toast } from "sonner";
-import { Eye, EyeOff, Mail, Lock } from "lucide-react"; // Icons for professional look
+import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false); // Eye toggle state
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+
+  const { login, loginWithGoogle } = useAuth(); // inject loginWithGoogle  from there;
   const navigate = useNavigate();
 
   // Email Validation Logic
@@ -24,25 +25,28 @@ const Login = () => {
       .toLowerCase()
       .match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
   };
+  // Password Regex Validation Logic
+  const validatePasswordRegex = (pass: string) => {
+    const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+    return regex.test(pass);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // 1. Basic Empty Validation
     if (!email || !password) {
       toast.error("Please fill in all fields");
       return;
     }
 
-    // 2. Email Format Validation
     if (!validateEmail(email)) {
       toast.error("Please enter a valid email address");
       return;
     }
 
-    // 3. Password Length Validation
-    if (password.length < 8) {
-      toast.error("Password must be at least 8 characters");
+    // Password Regex check
+    if (!validatePasswordRegex(password)) {
+      toast.error("Invalid password format. Check your credentials.");
       return;
     }
 
@@ -56,6 +60,19 @@ const Login = () => {
       const err = error as Error;
       console.error("Login error:", err);
       toast.error(err.message || "Login failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Google Sign In Handler
+  const handleGoogleClick = async () => {
+    try {
+      setLoading(true);
+      await loginWithGoogle();
+      navigate("/", { replace: true });
+    } catch (error) {
+      console.error("Google login error:", error);
     } finally {
       setLoading(false);
     }
@@ -76,7 +93,6 @@ const Login = () => {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-5">
-                {/* Email Field */}
                 <div className="space-y-2">
                   <Label htmlFor="email" className="text-xs font-bold uppercase tracking-wider text-slate-500">Email Address</Label>
                   <div className="relative">
@@ -92,14 +108,10 @@ const Login = () => {
                   </div>
                 </div>
 
-                {/* Password Field with Eye Icon */}
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
                     <Label htmlFor="password" className="text-xs font-bold uppercase tracking-wider text-slate-500">Password</Label>
-                    <Link
-                      to="/forgot-password"
-                      className="text-xs font-bold text-primary hover:underline"
-                    >
+                    <Link to="/forgot-password" title="Coming soon" className="text-xs font-bold text-primary hover:underline">
                       Forgot Password?
                     </Link>
                   </div>
@@ -128,19 +140,34 @@ const Login = () => {
                   className="w-full h-12 rounded-xl font-bold text-base shadow-lg shadow-primary/20 active:scale-[0.98] transition-all"
                   disabled={loading}
                 >
-                  {loading ? (
-                    <span className="flex items-center gap-2">
-                      <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Signing In...
-                    </span>
-                  ) : "Sign In"}
+                  {loading ? "Signing In..." : "Sign In"}
                 </Button>
               </form>
 
+              {/* --- OR DIVIDER --- */}
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-slate-200"></span>
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-white px-2 text-slate-500 font-medium">Or continue with</span>
+                </div>
+              </div>
+
+              {/* --- GOOGLE BUTTON --- */}
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full h-12 rounded-xl flex items-center justify-center gap-3 border-slate-200 hover:bg-slate-50 active:scale-[0.98] transition-all"
+                onClick={handleGoogleClick}
+                disabled={loading}
+              >
+                <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5" alt="Google" />
+                <span className="font-bold text-slate-700">Google</span>
+              </Button>
+
               <div className="mt-8 text-center text-sm font-medium">
-                <span className="text-slate-500">
-                  Don't have an account?{" "}
-                </span>
+                <span className="text-slate-500">Don't have an account? </span>
                 <Link to="/register" className="text-primary hover:underline font-bold">
                   Create Account
                 </Link>

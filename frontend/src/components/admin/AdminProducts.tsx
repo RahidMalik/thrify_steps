@@ -5,8 +5,6 @@ import {
   Trash2,
   Image as ImageIcon,
   Box,
-  Tag,
-  Layers,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -22,7 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import api from "@/lib/api";
 import { toast } from "sonner";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectTrigger, SelectValue, SelectItem } from "../ui/select";
 
@@ -52,6 +50,11 @@ const AdminProducts = () => {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<IProduct | null>(null);
   const [newCatName, setNewCatName] = useState("");
+
+  // Naya state images ki files ko store karne ke liye
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [imagePreview, setImagePreview] = useState<string[]>([]);
+
   const [formData, setFormData] = useState({
     title: "",
     brand: "",
@@ -62,10 +65,8 @@ const AdminProducts = () => {
     colors: "",
     stock: "",
     category: "",
-    images: [] as string[],
     isFeatured: false,
   });
-  const [imagePreview, setImagePreview] = useState<string[]>([]);
 
   useEffect(() => {
     loadProducts();
@@ -89,7 +90,6 @@ const AdminProducts = () => {
     if (response.data?.categories) setCategories(response.data.categories);
   };
 
-  // --- Category Handle Fix ---
   const handleCreateCategory = async () => {
     if (!newCatName.trim()) return toast.error("Category name cannot be empty.");
     try {
@@ -99,7 +99,7 @@ const AdminProducts = () => {
       });
       if (response) {
         toast.success("Category added!");
-        setNewCatName(""); // Input clear karne ke liye
+        setNewCatName("");
         await loadCategories();
       }
     } catch (error) {
@@ -107,26 +107,27 @@ const AdminProducts = () => {
     }
   };
 
+  // --- Image Handling Updated for Cloudinary ---
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
 
-    Array.from(files).forEach((file) => {
+    const newFiles = Array.from(files);
+    setSelectedFiles((prev) => [...prev, ...newFiles]);
+
+    // Preview generation
+    newFiles.forEach((file) => {
       const reader = new FileReader();
       reader.onloadend = () => {
-        const base64 = reader.result as string;
-        setFormData((prev) => ({ ...prev, images: [...prev.images, base64] }));
-        setImagePreview((prev) => [...prev, base64]);
+        setImagePreview((prev) => [...prev, reader.result as string]);
       };
       reader.readAsDataURL(file);
     });
   };
 
   const removeImage = (index: number) => {
-    const newImages = [...formData.images];
-    newImages.splice(index, 1);
-    setFormData({ ...formData, images: newImages });
-    setImagePreview(newImages);
+    setImagePreview((prev) => prev.filter((_, i) => i !== index));
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -135,37 +136,52 @@ const AdminProducts = () => {
     const discPrice = formData.discountPrice ? parseFloat(formData.discountPrice) : 0;
 
     if (discPrice > 0 && discPrice >= mainPrice) {
-      return toast.error("Discount price (Rs. " + discPrice + ") must be less than Original price (Rs. " + mainPrice + ")");
+      return toast.error("Discount price must be less than Original price");
     }
 
-    if (formData.images.length === 0) {
+    // Checking if images exist (either new files or existing URLs if editing)
+    if (selectedFiles.length === 0 && imagePreview.length === 0) {
       return toast.error("Please upload at least one product image.");
     }
 
     try {
-      const productData: Record<string, unknown> = {
-        ...formData,
-        sizes: formData.sizes.split(",").map((s) => s.trim()),
-        colors: formData.colors.split(",").map((c) => c.trim()),
-        price: parseFloat(formData.price),
-        discountPrice: formData.discountPrice
-          ? parseFloat(formData.discountPrice)
-          : undefined,
-        stock: parseInt(formData.stock),
-      };
+      // --- FormData creation for Backend ---
+      const data = new FormData();
+      data.append("title", formData.title);
+      data.append("brand", formData.brand);
+      data.append("price", formData.price);
+      data.append("discountPrice", formData.discountPrice);
+      data.append("description", formData.description);
+      data.append("stock", formData.stock);
+      data.append("category", formData.category);
+      data.append("isFeatured", String(formData.isFeatured));
+      data.append("sizes", formData.sizes); // Backend will split it
+      data.append("colors", formData.colors); // Backend will split it
+
+      // Nayi files append karein
+      selectedFiles.forEach((file) => {
+        data.append("images", file);
+      });
+
+      // Agar editing ho rahi hai aur purani images bachi hain
+      if (editing && selectedFiles.length === 0) {
+        // Note: Backend logic handles existing images or we can send URLs
+        // For now, if no new files, we assume existing ones stay.
+      }
 
       if (editing) {
-        await api.updateProduct(editing._id, productData);
+        await api.updateProduct(editing._id, data);
         toast.success("Product updated!");
       } else {
-        await api.createProduct(productData);
+        await api.createProduct(data);
         toast.success("Product created!");
       }
+
       setOpen(false);
       resetForm();
       loadProducts();
     } catch (error) {
-      const err = error as Error
+      const err = error as Error;
       toast.error(err.message || "Error saving product");
     }
   };
@@ -182,14 +198,11 @@ const AdminProducts = () => {
   };
 
   const handleEdit = (product: IProduct) => {
-    const categoryId =
-      typeof product.category === "object"
-        ? product.category?._id
-        : product.category;
+    const categoryId = typeof product.category === "object" ? product.category?._id : product.category;
     setEditing(product);
     setFormData({
       title: product.title,
-      brand: product.brand,
+      brand: product.brand || "",
       price: product.price.toString(),
       discountPrice: product.discountPrice?.toString() || "",
       description: product.description,
@@ -197,10 +210,10 @@ const AdminProducts = () => {
       colors: product.colors?.join(", ") || "",
       stock: product.stock.toString(),
       category: categoryId || "",
-      images: product.images || [],
       isFeatured: product.isFeatured || false,
     });
     setImagePreview(product.images || []);
+    setSelectedFiles([]); // Reset new files when editing starts
     setOpen(true);
   };
 
@@ -215,10 +228,10 @@ const AdminProducts = () => {
       colors: "",
       stock: "",
       category: "",
-      images: [],
       isFeatured: false,
     });
     setImagePreview([]);
+    setSelectedFiles([]);
     setEditing(null);
   };
 
@@ -229,9 +242,7 @@ const AdminProducts = () => {
           <h1 className="text-2xl md:text-3xl font-extrabold flex items-center gap-2">
             <Box className="w-8 h-8 text-primary" /> Products
           </h1>
-          <p className="text-muted-foreground text-sm">
-            Manage your store inventory
-          </p>
+          <p className="text-muted-foreground text-sm">Manage your store inventory</p>
         </div>
 
         <Dialog open={open} onOpenChange={setOpen}>
@@ -246,10 +257,7 @@ const AdminProducts = () => {
                 {editing ? "Update Inventory" : "New Collection Item"}
               </DialogTitle>
             </DialogHeader>
-            <form
-              onSubmit={handleSubmit}
-              className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4"
-            >
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label className="text-xs font-bold uppercase">Basic Info</Label>
@@ -263,7 +271,6 @@ const AdminProducts = () => {
                     placeholder="Brand Name (Optional)"
                     value={formData.brand}
                     onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-
                   />
                 </div>
 
@@ -289,9 +296,6 @@ const AdminProducts = () => {
                   </div>
                 </div>
 
-                {/* --- Category Section with Plus Button --- */}
-
-                {/* Category Section */}
                 <div className="space-y-2">
                   <Label className="text-xs font-bold uppercase">Category</Label>
                   <Select value={formData.category} onValueChange={(v) => setFormData({ ...formData, category: v })}>
@@ -305,25 +309,21 @@ const AdminProducts = () => {
                     </SelectContent>
                   </Select>
 
-                  {/* Inline Add Category (No prompt) */}
                   <div className="flex gap-2 mt-2">
                     <Input
-                      placeholder="New category name..."
+                      placeholder="New category..."
                       value={newCatName}
                       onChange={(e) => setNewCatName(e.target.value)}
                       className="h-9"
                     />
-                    <Button type="button" onClick={handleCreateCategory} variant="outline" className="h-9">
-                      Add
-                    </Button>
+                    <Button type="button" onClick={handleCreateCategory} variant="outline" className="h-9">Add</Button>
                   </div>
                 </div>
 
-                {/* Colors Section */}
                 <div className="space-y-2">
                   <Label className="text-xs font-bold uppercase">Colors</Label>
                   <Input
-                    placeholder="Red, Blue, Black (comma separated)"
+                    placeholder="Red, Blue, Black"
                     value={formData.colors}
                     onChange={(e) => setFormData({ ...formData, colors: e.target.value })}
                     required

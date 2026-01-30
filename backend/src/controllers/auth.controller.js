@@ -9,6 +9,7 @@ const { sendSuccess, sendError } = require('../utils/response');
 const { asyncHandler } = require('../middlewares/error.middleware');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
+const jwt = require('jsonwebtoken');
 /**
  * @route   POST /api/auth/register
  * @desc    Register a new user
@@ -238,10 +239,10 @@ const forgotPassword = async (req, res) => {
       return res.status(404).json({ message: "User not found with this email." });
     }
 
-    // 1. Token generate karein (Random string)
+    // 1. generate the token  (Random string)
     const resetToken = crypto.randomBytes(20).toString('hex');
 
-    // 2. Token ko hash karke DB mein save karein (1 hour expiry)
+    // 2. hash the token and sace the password in DB (1 hour expiry)
     user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
     user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
 
@@ -332,10 +333,50 @@ const resetPassword = async (req, res) => {
     res.status(500).json({ message: "Server error during reset." });
   }
 };
+const googleLogin = async (req, res) => {
+  try {
+    const { email, name, uid } = req.body;
+
+
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      // 2. if user does't exist, create a new user
+      // add a dummy password
+      user = await User.create({
+        name,
+        email,
+        password: uid + process.env.JWT_SECRET, // Dummy password
+        isGoogleUser: true // Ek flag rakhna acha hota hai
+      });
+    }
+
+    // 3. JWT Token generate karo (Wahi logic jo normal login mein hai)
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: '30d',
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        token,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role
+        }
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 module.exports = {
   register,
   login,
+  googleLogin,
   getMe,
   updateProfile,
   addToCart,

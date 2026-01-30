@@ -15,7 +15,8 @@ const {
   removeFromCart,
   getCart,
   forgotPassword,
-  resetPassword
+  resetPassword,
+  googleLogin,
 } = require('../controllers/auth.controller');
 
 // Public routes
@@ -25,6 +26,9 @@ router.post('/login', login);
 // Password reset routes
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password/:token', resetPassword);
+
+// Google OAuth route
+router.post('/google-login', googleLogin);
 
 // Protected routes
 router.get('/me', protect, getMe);

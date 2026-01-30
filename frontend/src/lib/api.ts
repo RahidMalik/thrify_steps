@@ -104,7 +104,16 @@ export interface PromoCodeValidation {
     discountValue: number;
   };
 }
-
+interface AuthResponse {
+  success: boolean;
+  message: string;
+  user: {
+    id: string;
+    email: string;
+    name: string;
+  };
+  token: string;
+}
 // --- ApiClient Class ---
 
 class ApiClient {
@@ -216,6 +225,14 @@ class ApiClient {
     return this.request<{ message: string }>(`/auth/reset-password/${token}`, {
       method: 'POST',
       body: JSON.stringify({ password }),
+    });
+  }
+
+  // api.ts file ke andar ApiClient class mein:
+  async googleLogin(data: { email: string | null; name: string | null; uid: string }) {
+    return this.request<AuthResponse>('/auth/google-login', {
+      method: 'POST',
+      body: JSON.stringify(data),
     });
   }
 
@@ -394,18 +411,18 @@ class ApiClient {
     });
   }
 
-  // Admin - Products
-  async createProduct(productData: Partial<Product>) {
+  // Admin - Products (Cloudinary/Multer Friendly)
+  async createProduct(productData: FormData) {
     return this.request<{ product: Product }>('/products', {
       method: 'POST',
-      body: JSON.stringify(productData),
+      body: productData, // Direct FormData
     });
   }
 
-  async updateProduct(id: string, productData: Partial<Product>) {
+  async updateProduct(id: string, productData: FormData) {
     return this.request<{ product: Product }>(`/products/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(productData),
+      body: productData, // Direct FormData
     });
   }
 

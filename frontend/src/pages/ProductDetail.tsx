@@ -142,7 +142,7 @@ const ProductDetail = () => {
         <section className="py-6 md:py-12 bg-background">
           <div className="container-custom">
             {/* Breadcrumb - Text small for mobile */}
-            <nav className="mb-6 md:mb-8 text-[11px] md:text-sm overflow-x-auto whitespace-nowrap pb-2">
+            <nav className="mb-6 mt-12 md:mt-0 md:mb-8 text-[11px] md:text-sm overflow-x-auto whitespace-nowrap pb-2">
               <ol className="flex items-center gap-1.5 md:gap-2 text-muted-foreground">
                 <li><Link to="/" className="hover:text-foreground">Home</Link></li>
                 <li>/</li>

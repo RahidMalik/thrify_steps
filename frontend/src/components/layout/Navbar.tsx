@@ -145,21 +145,21 @@ const Navbar = () => {
             </span>
           </Link>
 
-          {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-8">
-            <Link to="/" className={`text-sm font-medium ${isActive("/") ? "text-primary" : "text-gray-600 hover:text-black"}`}>Home</Link>
-            <Link to="/about" className={`text-sm font-medium ${isActive("/about") ? "text-primary" : "text-gray-600 hover:text-black"}`}>About</Link>
+          {/* Desktop Nav - Text size set to 'text-xs' for md screens and 'text-sm' for lg */}
+          <div className="hidden md:flex items-center gap-4 lg:gap-8">
+            <Link to="/" className={`text-xs lg:text-sm font-medium ${isActive("/") ? "text-primary" : "text-gray-600 hover:text-black"}`}>Home</Link>
+            <Link to="/about" className={`text-xs lg:text-sm font-medium ${isActive("/about") ? "text-primary" : "text-gray-600 hover:text-black"}`}>About</Link>
             {categories.slice(0, 2).map((cat) => (
-              <Link key={cat._id} to={`/products/${cat.name.toLowerCase()}`} className={`text-sm font-medium capitalize ${isActive(`/products/${cat.name.toLowerCase()}`) ? "text-primary" : "text-gray-600 hover:text-black"}`}>{cat.name}</Link>
+              <Link key={cat._id} to={`/products/${cat.name.toLowerCase()}`} className={`text-xs lg:text-sm font-medium capitalize ${isActive(`/products/${cat.name.toLowerCase()}`) ? "text-primary" : "text-gray-600 hover:text-black"}`}>{cat.name}</Link>
             ))}
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="hidden md:flex items-center gap-4">
+            <div className="hidden md:flex items-center gap-2 lg:gap-4">
 
-              {/* Desktop Search Bar - FIXED Z-INDEX & RESULTS */}
-              <div className="relative z-[110] w-[250px]">
-                <Search className="absolute hidden lg:flex left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              {/* Desktop Search Bar - Hidden on 'md' (Tablets), visible on 'lg' (Laptops/Desktops) */}
+              <div className="relative z-[110] hidden md:block w-[200px] xl:w-[250px]">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   className="pl-9 rounded-full bg-black/[0.04] border-none focus:bg-white transition-all"
                   placeholder="Search shoes..."
@@ -187,18 +187,18 @@ const Navbar = () => {
               {user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="p-2 hover:bg-gray-100 rounded-full outline-none"><User className="w-5 h-5 text-black" /></button>
+                    <button className="p-2 hover:bg-gray-100 rounded-full outline-none relative z-[110]"><User className="w-5 h-5 text-black" /></button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48 bg-white border">
+                  <DropdownMenuContent align="end" className="w-48 z-[160] bg-white border">
                     <DropdownMenuItem onClick={() => navigate("/profile")}>Profile</DropdownMenuItem>
                     {isAdmin && <DropdownMenuItem onClick={() => navigate("/admin")}>Admin Panel</DropdownMenuItem>}
                     <DropdownMenuItem onClick={() => { logout(); navigate("/"); }} className="text-orange-600 font-bold">Logout</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="sm" onClick={() => navigate("/login")}>Login</Button>
-                  <Button size="sm" onClick={() => navigate("/register")}>Register</Button>
+                <div className="flex items-center gap-1 lg:gap-2">
+                  <Button variant="ghost" size="sm" className="text-xs" onClick={() => navigate("/login")}>Login</Button>
+                  <Button size="sm" className="text-xs" onClick={() => navigate("/register")}>Sign Up</Button>
                 </div>
               )}
             </div>
@@ -209,7 +209,7 @@ const Navbar = () => {
           </div>
         </div>
 
-        {/* Mobile Search Bar */}
+        {/* Mobile Search Bar - Visible on 'xs', 'sm', and 'md' */}
         <div className="md:hidden pb-3">
           <div className="relative z-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -232,8 +232,6 @@ const Navbar = () => {
       {isOpen && (
         <div className="md:hidden fixed inset-0 top-[115px] z-[150] bg-white h-[calc(100vh-115px)] overflow-y-auto">
           <div className="flex flex-col px-6 py-8">
-
-            {/* Quick Actions Logic Fixed */}
             <div className="grid grid-cols-2 gap-4 mb-8">
               <Link to="/cart" onClick={() => setIsOpen(false)} className="flex flex-col items-center justify-center p-5 bg-gray-50 rounded-2xl border border-gray-100">
                 <div className="relative">
@@ -242,7 +240,6 @@ const Navbar = () => {
                 </div>
                 <span className="text-xs font-bold text-black uppercase tracking-tight">Cart</span>
               </Link>
-
               {user ? (
                 isAdmin ? (
                   <Link to="/admin" onClick={() => setIsOpen(false)} className="flex flex-col items-center justify-center p-5 bg-gray-50 rounded-2xl border border-gray-100">
@@ -295,7 +292,7 @@ const Navbar = () => {
                     <LogIn className="w-5 h-5" /> Login
                   </Button>
                   <Button variant="outline" className="w-full h-14 rounded-2xl font-bold border-2" onClick={() => { navigate("/register"); setIsOpen(false); }}>
-                    <UserPlus className="w-5 h-5 mr-2" /> Register
+                    <UserPlus className="w-5 h-5 mr-2" /> Sign Up
                   </Button>
                 </>
               )}

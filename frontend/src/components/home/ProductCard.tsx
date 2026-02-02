@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ShoppingBag, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -25,9 +25,17 @@ const ProductCard = ({
   isBestSeller,
 }: ProductCardProps) => {
   const [isLiked, setIsLiked] = useState(false);
+  const navigate = useNavigate();
+
   const discount = originalPrice
     ? Math.round(((originalPrice - price) / originalPrice) * 100)
     : 0;
+
+  // Add to Cart button click handler
+  const handleAddToCartClick = (e: React.MouseEvent) => {
+    e.preventDefault(); // Kisi bhi parent link behavior ko rokne ke liye
+    navigate(`/product/${id}`);
+  };
 
   return (
     <div className="group card-hover">
@@ -60,10 +68,13 @@ const ProductCard = ({
           )}
         </div>
 
-        {/* Quick Actions */}
+        {/* Wishlist Button */}
         <div className="absolute top-3 right-3">
           <button
-            onClick={() => setIsLiked(!isLiked)}
+            onClick={(e) => {
+              e.preventDefault();
+              setIsLiked(!isLiked);
+            }}
             className={`p-2 rounded-full transition-all ${isLiked
               ? "bg-primary text-primary-foreground"
               : "bg-background/90 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground"
@@ -73,11 +84,16 @@ const ProductCard = ({
           </button>
         </div>
 
-        {/* Add to Cart - Shows on Hover */}
+        {/* View Details (Add to Cart label) - Shows on Hover */}
         <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-          <Button variant="dark" className="w-full" size="sm">
+          <Button
+            variant="dark"
+            className="w-full"
+            size="sm"
+            onClick={handleAddToCartClick} // Navigates to Product Detail
+          >
             <ShoppingBag className="w-4 h-4 mr-2" />
-            Add to Cart
+            View Details
           </Button>
         </div>
       </div>

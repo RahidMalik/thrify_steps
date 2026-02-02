@@ -48,6 +48,10 @@ const userSchema = new mongoose.Schema({
     minlength: [8, 'Password must be at least 8 characters'],
     select: false // Don't return password by default
   },
+  avatar: {
+    type: String,
+    default: ''
+  },
   role: {
     type: String,
     enum: ['admin', 'customer'],

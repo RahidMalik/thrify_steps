@@ -9,8 +9,11 @@ const { admin } = require('../middlewares/admin.middleware');
 const {
   getStats,
   getAllUsers,
-  updateUserRole
+  updateUserRole,
+  deleteUser,
 } = require('../controllers/admin.controller');
+
+
 
 // All routes require admin access
 router.use(protect, admin);
@@ -18,5 +21,8 @@ router.use(protect, admin);
 router.get('/stats', getStats);
 router.get('/users', getAllUsers);
 router.put('/users/:id/role', updateUserRole);
+
+// Only admin can delete users
+router.route("/users/:id").delete(protect, admin, deleteUser);
 
 module.exports = router;

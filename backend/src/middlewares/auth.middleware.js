@@ -26,10 +26,10 @@ const protect = async (req, res, next) => {
     try {
       // Verify token
       const decoded = verifyToken(token);
-      
+
       // Get user from token
       req.user = await User.findById(decoded.id).select('-password');
-      
+
       if (!req.user) {
         return sendError(res, 401, 'User not found');
       }

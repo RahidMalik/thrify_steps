@@ -5,6 +5,7 @@
 
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
 const morgan = require('morgan');
 const { FRONTEND_URL, NODE_ENV } = require('./config/env');
 const { errorHandler } = require('./middlewares/error.middleware');
@@ -47,6 +48,12 @@ app.use(cors({
   },
   credentials: true
 }));
+app.use(
+  helmet({
+    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  })
+);
 
 // Logging middleware (only in development)
 if (NODE_ENV === 'development') {

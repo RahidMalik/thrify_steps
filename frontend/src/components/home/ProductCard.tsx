@@ -9,7 +9,7 @@ interface ProductCardProps {
   price: number;
   originalPrice?: number;
   image: string;
-  category: "sneakers" | "joggers";
+  category?: string;
   isNew?: boolean;
   isBestSeller?: boolean;
 }

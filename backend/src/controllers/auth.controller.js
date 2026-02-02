@@ -10,6 +10,7 @@ const { asyncHandler } = require('../middlewares/error.middleware');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const jwt = require('jsonwebtoken');
+const cloudinary = require('cloudinary').v2;
 /**
  * @route   POST /api/auth/register
  * @desc    Register a new user
@@ -100,7 +101,8 @@ const getMe = asyncHandler(async (req, res) => {
       name: user.name,
       email: user.email,
       role: user.role,
-      cart: user.cart
+      cart: user.cart,
+      avatar: user.avatar,
     }
   });
 });
@@ -110,33 +112,6 @@ const getMe = asyncHandler(async (req, res) => {
  * @desc    Update user profile
  * @access  Private
  */
-const updateProfile = asyncHandler(async (req, res) => {
-  const { name, email } = req.body;
-  const userId = req.user.id;
-
-  // Check if email is being changed and if it's already taken
-  if (email) {
-    const existingUser = await User.findOne({ email, _id: { $ne: userId } });
-    if (existingUser) {
-      return sendError(res, 400, 'Email already in use');
-    }
-  }
-
-  const user = await User.findByIdAndUpdate(
-    userId,
-    { name, email },
-    { new: true, runValidators: true }
-  ).select('-password');
-
-  sendSuccess(res, 200, 'Profile updated successfully', {
-    user: {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role
-    }
-  });
-});
 
 /**
  * @route   POST /api/auth/cart
@@ -349,7 +324,7 @@ const googleLogin = async (req, res) => {
         email,
         password: uid + process.env.JWT_SECRET, // Dummy password
         isGoogleUser: true, // Flag to indicate Google user
-        role: isAdmin ? 'admin' : 'user'
+        role: isAdmin ? 'admin' : 'customer'
       });
     }
     if (user) {
@@ -360,33 +335,115 @@ const googleLogin = async (req, res) => {
         user.name = process.env.ADMIN_NAME;
       } else {
         // make old admin users as normal users if he did't want to be admin if owner want multiple admin then he add email of that user in env.
-        user.role = 'user';
+        user.role = 'customer';
       }
-
       await user.save();
     }
 
-    // 3. JWT Token generate karo (Wahi logic jo normal login mein hai)
+    // Backend Controller: googleLogin function ka end
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: '30d',
     });
 
     res.status(200).json({
       success: true,
+      message: 'Login successful',
       data: {
         token,
         user: {
+          _id: user._id,
           id: user._id,
           name: user.name,
           email: user.email,
-          role: user.role
+          role: user.role,
+          avatar: user.avatar
         }
       }
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
-};
+}
+/**
+ * @route   PUT /api/auth/profile
+ * @desc    Update user profile (Name, Email, and Avatar)
+ * @access  Private
+ */
+const updateProfile = asyncHandler(async (req, res) => {
+  const { name, email } = req.body;
+  const userId = req.user.id;
+
+  const user = await User.findById(userId);
+
+  if (!user) {
+    return sendError(res, 404, 'User not found');
+  }
+
+  if (email && email !== user.email) {
+    const existingUser = await User.findOne({ email, _id: { $ne: userId } });
+    if (existingUser) {
+      return sendError(res, 400, 'Email already in use');
+    }
+    user.email = email;
+  }
+
+  if (name) user.name = name;
+  // Avatar update logic
+  if (req.file) {
+
+    if (user.avatar) {
+      try {
+        const publicId = user.avatar.split('/').slice(-3).join('/').split('.')[0];
+        await cloudinary.uploader.destroy(publicId);
+      } catch (err) {
+        console.error("Cloudinary Delete Error:", err);
+      }
+    }
+    user.avatar = req.file.path;
+  }
+
+  const updatedUser = await user.save();
+
+  sendSuccess(res, 200, 'Profile updated successfully', {
+    user: {
+      id: updatedUser._id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      role: updatedUser.role,
+      avatar: updatedUser.avatar
+    }
+  });
+});
+
+const removeAvatar = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user.id);
+
+  if (!user.avatar) {
+    return sendError(res, 400, "No profile picture to remove");
+  }
+
+  // 1. Cloudinary se delete karein
+  try {
+    const publicId = user.avatar.split('/').slice(-3).join('/').split('.')[0];
+    await cloudinary.uploader.destroy(publicId);
+  } catch (err) {
+    console.error("Cloudinary Delete Error:", err);
+  }
+
+  // 2. DB mein khali kar dein
+  user.avatar = "";
+  await user.save();
+
+  sendSuccess(res, 200, "Profile picture removed", {
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      avatar: ""
+    }
+  });
+});
 
 module.exports = {
   register,
@@ -394,6 +451,7 @@ module.exports = {
   googleLogin,
   getMe,
   updateProfile,
+  removeAvatar,
   addToCart,
   updateCartItem,
   removeFromCart,

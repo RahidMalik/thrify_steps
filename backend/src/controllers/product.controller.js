@@ -57,11 +57,15 @@ const getProducts = asyncHandler(async (req, res) => {
   if (size) query.sizes = size;
   if (color) query.colors = new RegExp(color, 'i');
   if (featured === 'true') query.isFeatured = true;
-  if (search) query.$text = { $search: search };
+  if (search) {
+    query.$or = [
+      { title: { $regex: search, $options: 'i' } },
+      { brand: { $regex: search, $options: 'i' } }
+    ];
+  }
 
   const sort = {};
   sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
-
   const skip = (parseInt(page) - 1) * parseInt(limit);
 
   const products = await Product.find(query)

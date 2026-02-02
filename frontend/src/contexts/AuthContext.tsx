@@ -92,7 +92,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const result = await signInWithPopup(auth, googleProvider);
       const googleUser = result.user;
 
-      // Send data to backend (Ensure your api.googleLogin is working)
       const response = await api.googleLogin({
         email: googleUser.email,
         name: googleUser.displayName,
@@ -100,19 +99,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (response.success && response.data?.token) {
-        api.setToken(response.data.token);
-        localStorage.setItem('token', response.data.token);
+        const { token, user: userData } = response.data;
 
-        const userData = response.data.user as any;
+        // 1. Storage update
+        localStorage.setItem('token', token);
+        api.setToken(token);
 
+        // 2. State update (Directly use backend data)
         setUser({
-          _id: userData._id || userData.id,
-          name: userData.name,
-          email: userData.email,
-          role: userData.role || 'user',
+          ...userData,
+          _id: userData._id || userData.id || '',
         });
 
-        toast.success('Welcome with Google!');
+        toast.success('Login Successful!');
       }
     } catch (error) {
       const err = error as Error;
@@ -131,9 +130,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const updateUser = (userData: Partial<User>) => {
-    if (user) {
-      setUser({ ...user, ...userData });
-    }
+    setUser(prev => {
+      const updated = prev ? { ...prev, ...userData } : null;
+      if (updated) {
+        localStorage.setItem('user', JSON.stringify(updated));
+      }
+      return updated;
+    });
   };
 
   const isAdmin = user?.role === 'admin';

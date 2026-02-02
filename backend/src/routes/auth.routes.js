@@ -5,11 +5,13 @@
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../middlewares/auth.middleware');
+const upload = require('../config/cloudinaryConfig');
 const {
   register,
   login,
   getMe,
   updateProfile,
+  removeAvatar,
   addToCart,
   updateCartItem,
   removeFromCart,
@@ -32,7 +34,10 @@ router.post('/google-login', googleLogin);
 
 // Protected routes
 router.get('/me', protect, getMe);
-router.put('/profile', protect, updateProfile);
+
+// Profile update route with file upload
+router.put('/profile', protect, upload.single('avatar'), updateProfile);
+router.delete('/profile/avatar', protect, removeAvatar);
 
 // Cart routes
 router.get('/cart', protect, getCart);

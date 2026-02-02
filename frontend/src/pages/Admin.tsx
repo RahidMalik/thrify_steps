@@ -1,7 +1,6 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useNavigate, Routes, Route, Link, useLocation } from "react-router-dom";
-import { Package, Users, ShoppingBag, Tag, BarChart3, Menu, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Package, Users, ShoppingBag, Tag, BarChart3 } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useAuth } from "@/contexts/AuthContext";
@@ -40,11 +39,12 @@ const Admin = () => {
     <div className="min-h-screen bg-slate-50/50 flex flex-col">
       <Navbar />
 
-      <main className="flex-1 pt-20 md:pt-24 pb-20">
+      {/* Barhaye huye Padding taake Search Bar se niche rahe */}
+      <main className="flex-1 pt-32 md:pt-36 pb-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-          {/* Mobile Navigation (Tab Style) - Only visible on small screens */}
-          <div className="md:hidden overflow-x-auto no-scrollbar mb-6 flex gap-2 pb-2 border-b">
+          {/* Mobile Navigation - Added mt-6 for extra spacing from search bar */}
+          <div className="md:hidden overflow-x-auto no-scrollbar mb-6 mt-6 flex gap-2 pb-2 border-b">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path || (item.path !== "/admin" && location.pathname.startsWith(item.path));
@@ -63,9 +63,9 @@ const Admin = () => {
           </div>
 
           <div className="flex flex-col md:flex-row gap-8">
-            {/* Sidebar - Hidden on Mobile, Fixed on Desktop */}
+            {/* Sidebar - Desktop Sticky adjustment */}
             <aside className="hidden md:block w-64 flex-shrink-0">
-              <div className="bg-white rounded-xl border shadow-sm p-4 sticky top-28">
+              <div className="bg-white rounded-xl border shadow-sm p-4 sticky top-32">
                 <div className="mb-6 px-4">
                   <h2 className="font-extrabold text-xl tracking-tight text-gray-800">Admin Panel</h2>
                   <p className="text-xs text-muted-foreground">Manage your store</p>
@@ -93,8 +93,8 @@ const Admin = () => {
               </div>
             </aside>
 
-            {/* Main Content Area */}
-            <div className="flex-1 min-w-0">
+            {/* Main Content Area - mt-4 for mobile spacing */}
+            <div className="flex-1 mt-4 md:mt-0 min-w-0">
               <div className="bg-white md:bg-transparent rounded-2xl">
                 <Routes>
                   <Route path="/" element={<AdminStats />} />

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Users, Mail, ShieldCheck, Trash2, User as UserIcon } from "lucide-react";
+import { Users, Mail, ShieldCheck, Trash2, User as UserIcon, Loader2 } from "lucide-react";
 import api, { User } from "@/lib/api";
 import { toast } from "sonner";
 import {
@@ -33,13 +33,29 @@ const AdminUsers = () => {
     };
 
     const handleDeleteUser = async (id: string) => {
-        if (!confirm("Are you sure? This action cannot be undone.")) return;
-        toast.info("Delete logic needs backend integration");
+        // 1. Safety Check: Current user ka ID check (Agar auth context se user mil raha ho)
+        // Ya phir simply role check (jo humne button disable karke pehle hi kiya hua hai)
+
+        if (!confirm("Are you sure? This user and their associated data will be permanently removed.")) return;
+
+        try {
+            // Hum optimistic update bhi kar sakte hain, lekin safe rehne ke liye pehle API call karte hain
+            const response = await api.deleteUser(id);
+
+            if (response.success) {
+                // UI se user ko foran nikaal do bina reload kiye
+                setUsers((prevUsers) => prevUsers.filter((u) => u._id !== id));
+                toast.success("User deleted successfully");
+            }
+        } catch (error: any) {
+            console.error("Delete Error:", error);
+            toast.error(error.response?.data?.message || "Failed to delete user. Make sure you have admin rights.");
+        }
     };
 
     return (
         <div className="space-y-6 pb-10">
-            {/* Header Section - Responsive Flex */}
+            {/* Header Section */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50 p-4 rounded-xl border">
                 <div>
                     <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
@@ -53,12 +69,12 @@ const AdminUsers = () => {
             </div>
 
             {loading ? (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-pulse">
-                    {[1, 2, 3].map(i => <div key={i} className="h-32 bg-slate-100 rounded-lg" />)}
+                <div className="flex justify-center py-20">
+                    <Loader2 className="w-10 h-10 animate-spin text-primary" />
                 </div>
             ) : (
                 <>
-                    {/* Desktop View: Proper Table (Hidden on Mobile) */}
+                    {/* Desktop View: Proper Table */}
                     <div className="hidden md:block bg-white border rounded-xl overflow-hidden shadow-sm">
                         <Table>
                             <TableHeader className="bg-slate-50">
@@ -74,10 +90,21 @@ const AdminUsers = () => {
                                     <TableRow key={user._id} className="hover:bg-slate-50/50">
                                         <TableCell className="font-medium">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                                                    {user.name.charAt(0).toUpperCase()}
+                                                {/* Profile Pic or Initial */}
+                                                <div className="w-10 h-10 rounded-full overflow-hidden border bg-slate-100 flex items-center justify-center shrink-0 shadow-sm">
+                                                    {user.avatar ? (
+                                                        <img
+                                                            src={user.avatar}
+                                                            alt={user.name}
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-full h-full bg-primary/10 text-primary flex items-center justify-center font-bold">
+                                                            {user.name.charAt(0).toUpperCase()}
+                                                        </div>
+                                                    )}
                                                 </div>
-                                                <span className="capitalize">{user.name}</span>
+                                                <span className="capitalize font-semibold text-slate-700">{user.name}</span>
                                             </div>
                                         </TableCell>
                                         <TableCell>
@@ -96,7 +123,7 @@ const AdminUsers = () => {
                                                 variant="ghost"
                                                 size="icon"
                                                 onClick={() => handleDeleteUser(user._id)}
-                                                className="text-red-500 hover:bg-red-500"
+                                                className="text-red-500 hover:text-red-600 hover:bg-red-50"
                                                 disabled={user.role === 'admin'}
                                             >
                                                 <Trash2 className="w-4 h-4" />
@@ -114,24 +141,32 @@ const AdminUsers = () => {
                             <div key={user._id} className="bg-white p-4 rounded-xl border shadow-sm space-y-4">
                                 <div className="flex justify-between items-start gap-2">
                                     <div className="flex items-center gap-3 min-w-0 flex-1">
-                                        {/* User Icon/Initial */}
-                                        <div className="w-10 h-10 shrink-0 rounded-full bg-slate-100 flex items-center justify-center">
-                                            <UserIcon className="w-5 h-5 text-slate-500" />
+                                        {/* Mobile Avatar Fallback */}
+                                        <div className="w-12 h-12 shrink-0 rounded-full overflow-hidden border bg-slate-50 flex items-center justify-center shadow-sm">
+                                            {user.avatar ? (
+                                                <img
+                                                    src={user.avatar}
+                                                    alt={user.name}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full bg-slate-200 text-slate-600 flex items-center justify-center font-bold text-lg">
+                                                    {user.name.charAt(0).toUpperCase()}
+                                                </div>
+                                            )}
                                         </div>
 
-                                        {/* Text Container - min-w-0 is key here */}
                                         <div className="min-w-0 flex-1">
-                                            <p className="font-bold capitalize truncate">{user.name}</p>
-                                            <p className="text-xs text-muted-foreground truncate break-all">
-                                                {user.email}
+                                            <p className="font-bold capitalize truncate text-slate-800">{user.name}</p>
+                                            <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
+                                                <Mail className="w-3 h-3" /> {user.email}
                                             </p>
                                         </div>
                                     </div>
 
-                                    {/* Badge - shrink-0 ensures it stays its size */}
                                     <Badge
                                         variant={user.role === 'admin' ? "default" : "outline"}
-                                        className="shrink-0 whitespace-nowrap"
+                                        className="shrink-0"
                                     >
                                         {user.role}
                                     </Badge>

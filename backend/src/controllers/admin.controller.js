@@ -171,9 +171,34 @@ const updateUserRole = asyncHandler(async (req, res) => {
     user
   });
 });
+const deleteUser = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+
+  if (!user) {
+    return sendError(res, 404, 'User not found');
+  }
+
+  if (user._id.toString() === req.user._id.toString()) {
+    return sendError(res, 400, 'You cannot delete your own admin account');
+  }
+
+  if (user.avatar && typeof user.avatar === 'object' && user.avatar.public_id) {
+    try {
+      const cloudinary = require('cloudinary');
+      await cloudinary.v2.uploader.destroy(user.avatar.public_id);
+    } catch (err) {
+      console.log("Cloudinary Delete Error:", err);
+    }
+  }
+
+  await user.deleteOne();
+
+  sendSuccess(res, 200, 'User deleted successfully');
+});
 
 module.exports = {
   getStats,
   getAllUsers,
-  updateUserRole
+  updateUserRole,
+  deleteUser
 };

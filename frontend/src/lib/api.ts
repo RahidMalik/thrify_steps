@@ -14,12 +14,6 @@ export interface ApiResponse<T> {
   error?: string;
 }
 
-export interface User {
-  _id: string;
-  name: string;
-  email: string;
-  role: 'user' | 'admin';
-}
 
 export interface Category {
   _id: string;
@@ -61,6 +55,7 @@ export interface Cart {
 
 export interface Order {
   _id: string;
+  id?: string;
   user: User;
   items: Array<{
     product: Product;
@@ -107,13 +102,20 @@ export interface PromoCodeValidation {
 interface AuthResponse {
   success: boolean;
   message: string;
-  user: {
-    id: string;
-    email: string;
-    name: string;
-  };
   token: string;
+  user: User;
 }
+
+export interface User {
+  _id: string;
+  id?: string;
+  name: string;
+  email: string;
+  role: 'customer' | 'admin';
+  avatar?: string;
+  isGoogleUser?: boolean;
+}
+
 // --- ApiClient Class ---
 
 class ApiClient {
@@ -145,10 +147,11 @@ class ApiClient {
     const url = `${this.baseURL}${endpoint}`;
     const token = this.getToken();
 
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    };
+    const headers: HeadersInit = { ...options.headers };
+
+    if (options.body && !(options.body instanceof FormData)) {
+      headers['Content-Type'] = 'application/json';
+    }
 
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
@@ -230,21 +233,33 @@ class ApiClient {
 
   // api.ts file ke andar ApiClient class mein:
   async googleLogin(data: { email: string | null; name: string | null; uid: string }) {
-    return this.request<AuthResponse>('/auth/google-login', {
+    const response = await this.request<AuthResponse>('/auth/google-login', {
       method: 'POST',
       body: JSON.stringify(data),
     });
+
+    if (response.success && response.data?.token) {
+      this.setToken(response.data.token);
+    }
+
+    return response;
   }
+
+
 
   async getMe() {
     return this.request<{ user: User }>('/auth/me');
   }
 
-  async updateProfile(name?: string, email?: string) {
+  async updateProfile(formData: FormData) {
     return this.request<{ user: User }>('/auth/profile', {
       method: 'PUT',
-      body: JSON.stringify({ name, email }),
+      body: formData,
     });
+  }
+
+  async removeAvatar() {
+    return this.request('/auth/profile/avatar', { method: 'DELETE' });
   }
 
   // Cart endpoints
@@ -363,8 +378,24 @@ class ApiClient {
     return this.request<Record<string, number | string>>('/admin/stats');
   }
 
+  // Admin - User Management
   async getAllUsers(page = 1, limit = 20) {
-    return this.request<{ users: User[]; total: number }>(`/admin/users?page=${page}&limit=${limit}`);
+    // Yahan humne bataya ke response mein users ka array aur pagination ka object aayega
+    return this.request<{
+      users: User[];
+      pagination: {
+        currentPage: number;
+        totalPages: number;
+        totalUsers: number;
+        limit: number;
+      }
+    }>(`/admin/users?page=${page}&limit=${limit}`);
+  }
+
+  async deleteUser(id: string) {
+    return this.request<{ success: boolean; message: string }>(`/admin/users/${id}`, {
+      method: 'DELETE',
+    });
   }
 
   async getAllOrders(page = 1, limit = 20, filters?: Record<string, string>) {
@@ -417,6 +448,10 @@ class ApiClient {
       method: 'POST',
       body: productData, // Direct FormData
     });
+  }
+
+  async searchProducts(query: string) {
+    return this.request<{ products: Product[] }>(`/products?search=${query}&limit=8`);
   }
 
   async updateProduct(id: string, productData: FormData) {

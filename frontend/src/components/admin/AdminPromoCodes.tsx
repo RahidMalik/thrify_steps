@@ -254,7 +254,7 @@ const AdminPromoCodes = () => {
       {loading ? (
         <div className="text-center py-20 font-medium text-muted-foreground animate-pulse">Fetching Promo Codes...</div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-3 gap-6">
           {promoCodes.map((promo) => (
             <Card key={promo._id} className="relative group overflow-hidden border shadow-sm hover:shadow-md transition-all duration-300">
               {/* Top Status Bar */}

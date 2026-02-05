@@ -36,15 +36,15 @@ const Admin = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50/50 flex flex-col">
+    // Replaced bg-slate-50 with bg-background
+    <div className="min-h-screen bg-background text-foreground flex flex-col transition-colors duration-300">
       <Navbar />
 
-      {/* Barhaye huye Padding taake Search Bar se niche rahe */}
       <main className="flex-1 pt-32 md:pt-36 pb-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-          {/* Mobile Navigation - Added mt-6 for extra spacing from search bar */}
-          <div className="md:hidden overflow-x-auto no-scrollbar mb-6 mt-6 flex gap-2 pb-2 border-b">
+          {/* Mobile Navigation */}
+          <div className="md:hidden overflow-x-auto no-scrollbar mb-6 mt-6 flex gap-2 pb-2 border-b border-border">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path || (item.path !== "/admin" && location.pathname.startsWith(item.path));
@@ -52,7 +52,9 @@ const Admin = () => {
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full whitespace-nowrap text-sm font-medium transition-all ${isActive ? "bg-primary text-white shadow-md" : "bg-white text-muted-foreground border"
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full whitespace-nowrap text-sm font-medium transition-all ${
+                    // bg-white replaced with bg-card
+                    isActive ? "bg-primary text-primary-foreground shadow-md" : "bg-card text-muted-foreground border border-border"
                     }`}
                 >
                   <Icon className="w-4 h-4" />
@@ -63,11 +65,10 @@ const Admin = () => {
           </div>
 
           <div className="flex flex-col md:flex-row gap-8">
-            {/* Sidebar - Desktop Sticky adjustment */}
             <aside className="hidden md:block w-64 flex-shrink-0">
-              <div className="bg-white rounded-xl border shadow-sm p-4 sticky top-32">
+              <div className="bg-card rounded-xl border border-border shadow-sm p-4 sticky top-32">
                 <div className="mb-6 px-4">
-                  <h2 className="font-extrabold text-xl tracking-tight text-gray-800">Admin Panel</h2>
+                  <h2 className="font-extrabold text-xl tracking-tight text-foreground">Admin Panel</h2>
                   <p className="text-xs text-muted-foreground">Manage your store</p>
                 </div>
 
@@ -81,7 +82,7 @@ const Admin = () => {
                         to={item.path}
                         className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${isActive
                           ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-[1.02]"
-                          : "text-gray-500 hover:bg-slate-100 hover:text-gray-900"
+                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
                           }`}
                       >
                         <Icon className="w-5 h-5" />
@@ -93,9 +94,9 @@ const Admin = () => {
               </div>
             </aside>
 
-            {/* Main Content Area - mt-4 for mobile spacing */}
+            {/* Main Content Area */}
             <div className="flex-1 mt-4 md:mt-0 min-w-0">
-              <div className="bg-white md:bg-transparent rounded-2xl">
+              <div className="rounded-2xl">
                 <Routes>
                   <Route path="/" element={<AdminStats />} />
                   <Route path="/products" element={<AdminProducts />} />

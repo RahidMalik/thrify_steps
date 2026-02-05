@@ -93,7 +93,7 @@ const ShopPage = () => {
     return (
         <div className="min-h-screen flex flex-col">
             <Navbar />
-            <main className="flex-grow pt-20 md:pt-28 pb-12 bg-slate-50">
+            <main className="flex-grow pt-20 md:pt-28 pb-12">
                 <div className="container-custom max-w-7xl mx-auto px-4">
 
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 md:mb-10 gap-4">
@@ -106,7 +106,7 @@ const ShopPage = () => {
                             </p>
                         </div>
 
-                        <div className="flex items-center gap-3 bg-white p-2 rounded-xl shadow-sm border w-full md:w-auto">
+                        <div className="flex items-center gap-3 p-2 rounded-xl shadow-sm border w-full md:w-auto">
                             <ListFilter className="w-4 h-4 text-muted-foreground ml-2" />
                             <Select value={`${sortBy}-${sortOrder}`} onValueChange={handleSortChange}>
                                 <SelectTrigger className="w-full md:w-[180px] border-none shadow-none focus:ring-0">

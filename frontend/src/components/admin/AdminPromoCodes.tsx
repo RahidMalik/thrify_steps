@@ -231,7 +231,7 @@ const AdminPromoCodes = () => {
                 />
               </div>
 
-              <div className="flex items-center gap-2 bg-slate-50 p-3 rounded-lg border">
+              <div className="flex items-center gap-2  p-3 rounded-lg border">
                 <input
                   type="checkbox"
                   id="isActive"
@@ -275,7 +275,7 @@ const AdminPromoCodes = () => {
               </CardHeader>
 
               <CardContent className="space-y-4">
-                <div className="bg-slate-50 p-3 rounded-xl space-y-2.5 border border-slate-100">
+                <div className=" p-3 rounded-xl space-y-2.5 border ">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground flex items-center gap-1.5"><Ticket className="w-3.5 h-3.5" /> Benefit</span>
                     <span className="font-bold text-blue-600">

@@ -32,18 +32,25 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 // CORS configuration
 app.use(cors({
   origin: (origin, callback) => {
-    // 1. Allow development origins
-    if (NODE_ENV === 'development' || !origin) {
+    const allowedOrigins = [
+      'https://thrify-steps.vercel.app',
+      'http://localhost:5173',
+      'http://localhost:3000'
+    ];
+
+    if (FRONTEND_URL) allowedOrigins.push(FRONTEND_URL.replace(/\/$/, ""));
+
+
+    if (!origin || NODE_ENV === 'development') {
       return callback(null, true);
     }
 
-    // 2. Production check: Clean both URLs of trailing slashes
+    // 2. Check origin against allowed list
     const cleanOrigin = origin.replace(/\/$/, "");
-    const cleanFrontendURL = FRONTEND_URL ? FRONTEND_URL.replace(/\/$/, "") : "";
-
-    if (cleanOrigin === cleanFrontendURL || cleanOrigin === 'https://thrify-steps.vercel.app') {
+    if (allowedOrigins.includes(cleanOrigin)) {
       callback(null, true);
     } else {
+      console.error(`CORS Blocked: ${origin} is not in allowed list`);
       callback(new Error('Not allowed by CORS'));
     }
   },

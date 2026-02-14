@@ -30,12 +30,42 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // CORS configuration
+// app.js mein CORS setup update karein
+const allowedOrigins = [
+  FRONTEND_URL, // Aapka main production domain (thrifty-steps.vercel.app)
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://thrifty-steps-git-main-rahidmaliks-projects.vercel.app', // Yeh wala domain add kiya
+];
 
 app.use(cors({
-  origin: true,
-  credentials: true
+  origin: (origin, callback) => {
+    // 1. Allow requests with no origin (like mobile apps)
+    if (!origin) return callback(null, true);
+
+    // 2. Exact match check
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    // 3. Vercel dynamic domains check (Regex)
+    if (origin.includes('rahidmaliks-projects.vercel.app') || origin.endsWith('.vercel.app')) {
+      return callback(null, true);
+    }
+
+    // 4. Development check
+    if (NODE_ENV === 'development') {
+      return callback(null, true);
+    }
+
+
+    console.error(`CORS blocked for: ${origin}`);
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
-// ----------------------
 app.use(
   helmet({
     crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },

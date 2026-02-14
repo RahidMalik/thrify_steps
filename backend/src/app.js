@@ -78,6 +78,11 @@ if (NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
+// Home route
+app.get('/', (req, res) => {
+  res.send('Thrifty Steps API is Live and Running!');
+});
+
 // Health check route
 app.get('/health', (req, res) => {
   res.status(200).json({

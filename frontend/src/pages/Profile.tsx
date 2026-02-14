@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { User as UserIcon, Package, Camera, Loader2, Trash2, ShoppingBag } from "lucide-react";
+import { User as UserIcon, Package, Camera, Loader2, Trash2, ShoppingBag, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,6 +50,23 @@ const Profile = () => {
       console.error("Orders error:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // --- NEW LOGIC: CANCEL ORDER ---
+  const handleCancelOrder = async (orderId: string) => {
+    if (!window.confirm("Are you sure you want to cancel this order?")) return;
+
+    try {
+      // Backend ko orderStatus 'cancelled' bhej rahe hain
+      const response = await api.updateOrderStatus(orderId, { orderStatus: "cancelled" });
+
+      if (response.success) {
+        toast.success("Order cancelled successfully");
+        loadOrders(); // List ko refresh karein
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to cancel order");
     }
   };
 
@@ -206,12 +223,35 @@ const Profile = () => {
                             <p className="font-mono font-bold text-sm text-foreground uppercase">#{order._id.slice(-10)}</p>
                           </div>
                         </div>
-                        <Badge variant={order.orderStatus === 'delivered' ? 'default' : 'secondary'} className="capitalize">
-                          {order.orderStatus}
-                        </Badge>
+
+                        <div className="flex flex-col items-end gap-2">
+                          <Badge
+                            variant={order.orderStatus === 'delivered' ? 'default' : order.orderStatus === 'cancelled' ? 'destructive' : 'secondary'}
+                            className="capitalize"
+                          >
+                            {order.orderStatus}
+                          </Badge>
+
+                          {/* CANCEL BUTTON: Only visible if order is not shipped/delivered/cancelled */}
+                          {(order.orderStatus === 'pending' || order.orderStatus === 'processing') && (
+                            <button
+                              onClick={() => handleCancelOrder(order._id)}
+                              className="text-[10px] font-bold text-destructive hover:text-destructive/80 transition-colors flex items-center gap-1 mt-1"
+                            >
+                              <XCircle className="w-3 h-3" />
+                              Cancel Order
+                            </button>
+                          )}
+                        </div>
                       </div>
+
                       <div className="flex justify-between items-center pt-4 border-t border-border">
-                        <p className="text-sm text-muted-foreground">{new Date(order.createdAt).toDateString()}</p>
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">{new Date(order.createdAt).toDateString()}</p>
+                          <p className="text-[10px] font-bold text-primary/70 uppercase">
+                            Method: {order.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Paid Online'}
+                          </p>
+                        </div>
                         <p className="text-lg font-black text-foreground">Rs. {order.totalAmount.toLocaleString()}</p>
                       </div>
                     </div>

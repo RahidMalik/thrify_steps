@@ -88,7 +88,7 @@ const orderSchema = new mongoose.Schema({
     type: [orderItemSchema],
     required: true,
     validate: {
-      validator: function(v) {
+      validator: function (v) {
         return v && v.length > 0;
       },
       message: 'Order must have at least one item'
@@ -100,7 +100,7 @@ const orderSchema = new mongoose.Schema({
   },
   paymentMethod: {
     type: String,
-    enum: ['stripe', 'cash_on_delivery', 'paypal'],
+    enum: ['stripe', 'cash_on_delivery', 'paypal', "cod"],
     required: true,
     default: 'stripe'
   },
@@ -157,7 +157,7 @@ orderSchema.index({ paymentStatus: 1 });
 orderSchema.index({ paymentIntentId: 1 });
 
 // Virtual for order number
-orderSchema.virtual('orderNumber').get(function() {
+orderSchema.virtual('orderNumber').get(function () {
   return `THRIFTY-${this._id.toString().slice(-8).toUpperCase()}`;
 });
 

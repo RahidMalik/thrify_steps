@@ -32,22 +32,23 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 // CORS configuration
 app.use(cors({
   origin: (origin, callback) => {
-    // In development, allow localhost on any port
-    if (NODE_ENV === 'development') {
-      if (!origin || origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
-        callback(null, true);
-        return;
-      }
+    // 1. Allow development origins
+    if (NODE_ENV === 'development' || !origin) {
+      return callback(null, true);
     }
-    // In production, use configured FRONTEND_URL
-    if (origin === FRONTEND_URL) {
+
+    // 2. Production check: Clean both URLs of trailing slashes
+    const cleanOrigin = origin.replace(/\/$/, "");
+    const cleanFrontendURL = FRONTEND_URL ? FRONTEND_URL.replace(/\/$/, "") : "";
+
+    if (cleanOrigin === cleanFrontendURL || cleanOrigin === 'https://thrify-steps.vercel.app') {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
 }));
 app.use(

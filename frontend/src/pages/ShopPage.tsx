@@ -207,7 +207,7 @@ const ShopPage = () => {
                                         onClick={() => {
                                             setSearchParams({});
                                             if (categoryName) {
-                                                navigate("/shop");
+                                                navigate("/products");
                                             }
                                         }}
                                     >

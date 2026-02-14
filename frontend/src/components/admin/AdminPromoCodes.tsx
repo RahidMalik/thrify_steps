@@ -324,7 +324,7 @@ const AdminPromoCodes = () => {
 
       {/* Empty State */}
       {!loading && promoCodes.length === 0 && (
-        <div className="text-center py-20 bg-slate-50 rounded-3xl border-2 border-dashed">
+        <div className="text-center py-20 rounded-3xl border-2 border-dashed">
           <Ticket className="w-12 h-12 text-slate-300 mx-auto mb-4" />
           <p className="text-slate-500 font-medium">No active promo codes found. Start by creating one!</p>
         </div>

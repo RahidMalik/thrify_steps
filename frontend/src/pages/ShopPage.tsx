@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import api from "@/lib/api";
 import ProductCard from "@/components/home/ProductCard";
 import { Loader2, ChevronLeft, ChevronRight, ListFilter } from "lucide-react";
@@ -26,6 +26,7 @@ interface Product {
 }
 
 const ShopPage = () => {
+    const navigate = useNavigate();
     const { categoryName } = useParams();
     const [searchParams, setSearchParams] = useSearchParams();
 
@@ -201,7 +202,15 @@ const ShopPage = () => {
                                     <p className="text-base md:text-lg text-muted-foreground mb-4">
                                         No products found.
                                     </p>
-                                    <Button variant="default" onClick={() => setSearchParams({})}>
+                                    <Button
+                                        variant="default"
+                                        onClick={() => {
+                                            setSearchParams({});
+                                            if (categoryName) {
+                                                navigate("/shop");
+                                            }
+                                        }}
+                                    >
                                         View All Products
                                     </Button>
                                 </div>

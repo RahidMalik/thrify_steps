@@ -170,7 +170,7 @@ const Register = () => {
                     <span className="w-full border-t border-slate-200"></span>
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-white px-2 text-slate-500">Or continue with</span>
+                    <span className="bg-gray-400 px-2 text-slate-100">Or continue with</span>
                   </div>
                 </div>
 

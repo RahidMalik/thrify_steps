@@ -197,7 +197,7 @@ const ShopPage = () => {
                                     )}
                                 </>
                             ) : (
-                                <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-slate-200">
+                                <div className="text-center py-20  rounded-3xl border border-dashed">
                                     <p className="text-base md:text-lg text-muted-foreground mb-4">
                                         No products found.
                                     </p>

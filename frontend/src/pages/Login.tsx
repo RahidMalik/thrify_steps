@@ -82,9 +82,9 @@ const Login = () => {
     <PublicRoute>
       <div className="min-h-screen flex flex-col">
         <Navbar />
-        <main className="flex-grow pt-28 pb-20 bg-slate-50">
+        <main className="flex-grow pt-28 pb-20 ">
           <section className="container-custom max-w-md mx-auto px-4">
-            <div className="bg-white p-8 rounded-3xl shadow-xl border border-slate-100">
+            <div className="p-8 rounded-3xl shadow-xl border">
               <div className="text-center mb-8">
                 <h1 className="text-3xl font-black mb-2 tracking-tight">Welcome Back</h1>
                 <p className="text-muted-foreground text-sm font-medium">
@@ -150,7 +150,7 @@ const Login = () => {
                   <span className="w-full border-t border-slate-200"></span>
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-white px-2 text-slate-500 font-medium">Or continue with</span>
+                  <span className="bg-gray-400 px-2 text-slate-100 font-medium">Or continue with</span>
                 </div>
               </div>
 
